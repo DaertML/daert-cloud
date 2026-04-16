@@ -26,3 +26,5 @@ $ minikube start --driver docker --container-runtime docker --gpus all
 Check it works
 $ kubectl run gpu-test --rm -it --restart=Never --image=nvidia/cuda:12.0.0-base-ubuntu22.04 -- nvidia-smi
 
+Mount models folder
+$ minikube mount /home/pc/.cache/huggingface:/home/pc/.cache/huggingface
