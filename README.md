@@ -28,3 +28,16 @@ $ kubectl run gpu-test --rm -it --restart=Never --image=nvidia/cuda:12.0.0-base-
 
 Mount models folder
 $ minikube mount /home/pc/.cache/huggingface:/home/pc/.cache/huggingface
+
+Load vLLM docker image
+$ minikube image pull vllm/vllm-openai:latest
+
+Add HF token
+$ kubectl create secret generic huggingface-secret --from-literal=tok=your_token_here
+
+Create Storage and Deployment
+$ kubectl apply -f vllm-pv.yaml
+
+$ kubectl apply -f vllm-pvc.yaml
+
+$ kubectl apply -f vllm-deploy.yaml
