@@ -20,6 +20,8 @@ $ kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0
 Test successful installation:
 docker exec -it k3d-gpu-cluster-server-0 nvidia-smi
 
+TODO: at this stage nothing else works, you can only do docker-exec nvidia-smi, but the nodes do not see the GPUs; so the pods can not use it :( if you are a fan of k3d, go on, fix it, let me know how and will add the commands here :)
+
 # How to setup minikube cluster with NVIDIA GPU
 $ minikube start --driver docker --container-runtime docker --gpus all
 
