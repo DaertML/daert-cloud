@@ -24,20 +24,39 @@ docker exec -it k3d-gpu-cluster-server-0 nvidia-smi
 $ minikube start --driver docker --container-runtime docker --gpus all
 
 Check it works
+
 $ kubectl run gpu-test --rm -it --restart=Never --image=nvidia/cuda:12.0.0-base-ubuntu22.04 -- nvidia-smi
 
 Mount models folder
+
 $ minikube mount /home/pc/.cache/huggingface:/home/pc/.cache/huggingface
 
 Load vLLM docker image
+
 $ minikube image pull vllm/vllm-openai:latest
 
 Add HF token
+
 $ kubectl create secret generic huggingface-secret --from-literal=tok=your_token_here
 
 Create Storage and Deployment
+
 $ kubectl apply -f vllm-pv.yaml
 
 $ kubectl apply -f vllm-pvc.yaml
 
 $ kubectl apply -f vllm-deploy.yaml
+
+$ kubectl apply -f vllm-svc.yaml
+
+Launch curl client for testing the model inference
+
+$ kubectl run -i --tty --rm debug-client --image=curlimages/curl --restart=Never -- /bin/sh
+
+$ curl http://vllm-service/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "TinyLlama/TinyLlama-1.1B-Chat-v0.1",
+    "prompt": "<|system|>\nYou are a helpful assistant.</s>\n<|user|>\nHello! Who are you?</s>\n<|assistant|>\n",
+    "max_tokens": 50
+  }'
