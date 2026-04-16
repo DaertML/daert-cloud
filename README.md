@@ -19,3 +19,10 @@ $ kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0
 
 Test successful installation:
 docker exec -it k3d-gpu-cluster-server-0 nvidia-smi
+
+# How to setup minikube cluster with NVIDIA GPU
+$ minikube start --driver docker --container-runtime docker --gpus all
+
+Check it works
+$ kubectl run gpu-test --rm -it --restart=Never --image=nvidia/cuda:12.0.0-base-ubuntu22.04 -- nvidia-smi
+
