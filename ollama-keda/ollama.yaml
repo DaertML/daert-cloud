@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemma-3-4b
+  namespace: gemma-serverless
+  labels:
+    app: gemma-ollama
+spec:
+  replicas: 0 # Start at zero for serverless behavior
+  selector:
+    matchLabels:
+      app: gemma-ollama
+  template:
+    metadata:
+      labels:
+        app: gemma-ollama
+    spec:
+      initContainers:
+        - name: pull-model
+          image: ollama/ollama:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              ollama serve & 
+              sleep 5; 
+              ollama pull gemma3:4b-it;
+          volumeMounts:
+            - name: model-storage
+              mountPath: /root/.ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_KEEP_ALIVE
+              value: "5m" # Keep model in VRAM for 5 mins after request
+          resources:
+            limits:
+              nvidia.com/gpu: 1 # Remove if running on CPU only
+          volumeMounts:
+            - name: model-storage
+              mountPath: /root/.ollama
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc

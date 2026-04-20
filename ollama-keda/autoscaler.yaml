@@ -1,0 +1,18 @@
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
+metadata:
+  name: gemma-http-scaler
+  namespace: gemma-serverless
+spec:
+  hosts:
+    - gemma.local
+  scaleTargetRef:
+    name: gemma-3-4b       # The Deployment to scale
+    kind: Deployment
+    apiVersion: apps/v1
+    service: gemma-service # ADDED: The Service to route traffic to
+    port: 11434            # ADDED: The port on that Service
+  replicas:
+    min: 0
+    max: 5
+  targetPendingRequests: 10

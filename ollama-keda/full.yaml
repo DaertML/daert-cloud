@@ -1,0 +1,108 @@
+# 1. THE STORAGE
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# 2. THE DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemma-3-4b
+  namespace: default
+  labels:
+    app: gemma-ollama
+spec:
+  replicas: 0 
+  selector:
+    matchLabels:
+      app: gemma-ollama
+  template:
+    metadata:
+      labels:
+        app: gemma-ollama
+    spec:
+      initContainers:
+        - name: pull-model
+          image: ollama/ollama:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              ollama serve & 
+              SLEEP_COUNT=0
+              until ollama list >/dev/null 2>&1 || [ $SLEEP_COUNT -eq 30 ]; do 
+                echo "Waiting for Ollama server..."; 
+                sleep 2; 
+                SLEEP_COUNT=$((SLEEP_COUNT+1))
+              done; 
+              echo "Pulling Gemma 3 4B...";
+              ollama pull gemma3:4b;
+              echo "Verifying model installation...";
+              ollama list;
+              pkill ollama;
+              sleep 5;
+          volumeMounts:
+            - name: model-storage
+              mountPath: /root/.ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_KEEP_ALIVE
+              value: "5m"
+          resources:
+            # If your minikube has no GPU, comment out the limits/requests below
+            limits:
+              nvidia.com/gpu: 1 
+            requests:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: model-storage
+              mountPath: /root/.ollama
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc
+---
+# 3. THE SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: gemma-service
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 11434
+      targetPort: 11434
+  selector:
+    app: gemma-ollama
+---
+# 4. THE SCALER
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
+metadata:
+  name: gemma-http-scaler
+  namespace: default
+spec:
+  hosts:
+    - gemma.local
+  scaleTargetRef:
+    name: gemma-3-4b
+    kind: Deployment
+    apiVersion: apps/v1
+    service: gemma-service
+    port: 11434
+  replicas:
+    min: 0
+    max: 5
+  targetPendingRequests: 10
