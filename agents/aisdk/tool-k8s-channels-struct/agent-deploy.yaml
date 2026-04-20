@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-diagnostic-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diagnostic-agent
+  template:
+    metadata:
+      labels:
+        app: diagnostic-agent
+    spec:
+      serviceAccountName: k8s-diagnostic-agent
+      containers:
+        - name: agent
+          image: k8sagent:latest # Matches the tag we used in build
+          imagePullPolicy: IfNotPresent 
+          env:
+            - name: VLLM_BASE_URL
+              value: "http://vllm-service.default.svc.cluster.local/v1"

@@ -1,0 +1,12 @@
+{
+  "name": "k8s-diagnostic-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "latest",
+    "@kubernetes/client-node": "latest",
+    "ai": "latest",
+    "tsx": "latest",
+    "zod": "latest"
+  }
+}
